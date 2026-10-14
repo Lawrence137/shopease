@@ -89,7 +89,16 @@ async function ProductDetails({ params }: Props) {
         </p>
 
         <div className="mt-6">
-          <AddToCartButton product={product} />
+          <AddToCartButton
+             product={{
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              category: product.category,
+              image: product.image,
+              stock: product.stock,
+            }}
+         />
         </div>
       </div>
     </section>

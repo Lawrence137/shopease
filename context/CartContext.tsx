@@ -9,14 +9,22 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Product } from "@/lib/products";
 
-export type CartItem = Product & {
+export type CartProduct = {
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  image: string;
+  stock: number;
+};
+
+export type CartItem = CartProduct & {
   quantity: number;
 };
 
 type CartAction =
-  | { type: "ADD"; product: Product }
+  | { type: "ADD"; product: CartProduct }
   | { type: "REMOVE"; productId: number }
   | {
       type: "UPDATE_QUANTITY";
@@ -29,7 +37,7 @@ type CartContextValue = {
   items: CartItem[];
   itemCount: number;
   subtotal: number;
-  addToCart: (product: Product) => void;
+  addToCart: (product: CartProduct) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (
     productId: number,
@@ -43,21 +51,37 @@ function cartReducer(
 ): CartItem[] {
   switch (action.type) {
     case "ADD": {
+      if (action.product.stock < 1) {
+        return state;
+      }
+
       const existing = state.find(
         (item) => item.id === action.product.id
       );
 
       if (existing) {
-        return state.map((item) =>
-          item.id === action.product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+        return state.map((item) => {
+          if (item.id !== action.product.id) {
+            return item;
+          }
+
+          return {
+            ...item,
+            stock: action.product.stock,
+            quantity: Math.min(
+              item.quantity + 1,
+              action.product.stock
+            ),
+          };
+        });
       }
 
       return [
         ...state,
-        { ...action.product, quantity: 1 },
+        {
+          ...action.product,
+          quantity: 1,
+        },
       ];
     }
 
@@ -67,18 +91,31 @@ function cartReducer(
       );
 
     case "UPDATE_QUANTITY":
-      if (action.quantity < 1) {
-        return state;
-      }
+      return state.map((item) => {
+        if (item.id !== action.productId) {
+          return item;
+        }
 
-      return state.map((item) =>
-        item.id === action.productId
-          ? { ...item, quantity: action.quantity }
-          : item
-      );
+        return {
+          ...item,
+          quantity: Math.max(
+            1,
+            Math.min(
+              Math.floor(action.quantity),
+              item.stock
+            )
+          ),
+        };
+      });
 
     case "LOAD":
-      return action.items;
+      return action.items
+        .filter((item) => item.stock > 0)
+        .map((item) => ({
+          ...item,
+          quantity: Math.min(item.quantity, item.stock),
+        }))
+        .filter((item) => item.quantity >= 1);
 
     default:
       return state;
@@ -112,12 +149,20 @@ export function CartProvider({
               typeof item.id === "number" &&
               typeof item.name === "string" &&
               typeof item.price === "number" &&
+              typeof item.category === "string" &&
+              typeof item.image === "string" &&
+              typeof item.stock === "number" &&
+              Number.isInteger(item.stock) &&
+              item.stock >= 0 &&
               typeof item.quantity === "number" &&
-              item.quantity >= 1 &&
-              Number.isInteger(item.quantity)
+              Number.isInteger(item.quantity) &&
+              item.quantity >= 1
           );
 
-          dispatch({ type: "LOAD", items: validItems });
+          dispatch({
+            type: "LOAD",
+            items: validItems,
+          });
         }
       }
     } catch {
@@ -138,18 +183,23 @@ export function CartProvider({
 
   const value: CartContextValue = {
     items,
+
     itemCount: items.reduce(
       (total, item) => total + item.quantity,
       0
     ),
+
     subtotal: items.reduce(
       (total, item) => total + item.price * item.quantity,
       0
     ),
+
     addToCart: (product) =>
       dispatch({ type: "ADD", product }),
+
     removeFromCart: (productId) =>
       dispatch({ type: "REMOVE", productId }),
+
     updateQuantity: (productId, quantity) =>
       dispatch({
         type: "UPDATE_QUANTITY",

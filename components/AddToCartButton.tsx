@@ -1,23 +1,25 @@
 
 "use client";
 
-import { useCart } from "@/context/CartContext";
-import type { Product } from "@/lib/products";
+import { useCart, type CartProduct } from "@/context/CartContext";
 
-export default function AddToCartButton({
-  product,
-}: {
-  product: Product;
-}) {
+type Props = {
+  product: CartProduct;
+};
+
+export default function AddToCartButton({ product }: Props) {
   const { addToCart } = useCart();
+
+  const isOutOfStock = product.stock < 1;
 
   return (
     <button
       type="button"
+      disabled={isOutOfStock}
       onClick={() => addToCart(product)}
-      className="mt-8 rounded-lg bg-black px-6 py-3 font-semibold text-white hover:bg-gray-800"
+      className="rounded-lg bg-gray-900 px-6 py-3 font-semibold text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-400"
     >
-      Add to cart
+      {isOutOfStock ? "Out of stock" : "Add to cart"}
     </button>
   );
 }
