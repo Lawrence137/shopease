@@ -1,7 +1,8 @@
 
 import Link from "next/link";
+import { Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { getProducts } from "@/lib/db-products";
 
 export default function ProductsPage() {
   return (
@@ -24,15 +25,36 @@ export default function ProductsPage() {
           Explore our collection.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
-        </div>
+        <Suspense
+          fallback={
+            <p className="mt-8 text-gray-600">
+              Loading products...
+            </p>
+          }
+        >
+          <ProductList />
+        </Suspense>
       </section>
     </main>
+  );
+}
+
+async function ProductList() {
+  const products = await getProducts();
+
+  if (products.length === 0) {
+    return (
+      <p className="mt-8 text-gray-600">
+        No products found. Add some products to your database.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
   );
 }

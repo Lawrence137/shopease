@@ -1,72 +1,97 @@
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { products, formatPrice } from "@/lib/products";
+import { getProductById } from "@/lib/db-products";
+import { formatPrice } from "@/lib/products";
 import AddToCartButton from "@/components/AddToCartButton";
 
-type ProductPageProps = {
+type Props = {
   params: Promise<{ id: string }>;
 };
 
-// Tell Next.js which product pages to generate.
-export function generateStaticParams() {
-  return products.map((product) => ({
-    id: String(product.id),
-  }));
+export default function ProductPage({ params }: Props) {
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <header className="border-b bg-white">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <Link href="/" className="text-2xl font-bold">
+            ShopEase
+          </Link>
+
+          <Link
+            href="/products"
+            className="text-sm hover:underline"
+          >
+            Back to products
+          </Link>
+        </nav>
+      </header>
+
+      <Suspense
+        fallback={
+          <p className="mx-auto max-w-7xl px-6 py-12">
+            Loading product...
+          </p>
+        }
+      >
+        <ProductDetails params={params} />
+      </Suspense>
+    </main>
+  );
 }
 
-export default async function ProductPage({
-  params,
-}: ProductPageProps) {
+async function ProductDetails({ params }: Props) {
   const { id } = await params;
+  const productId = Number(id);
 
-  const product = products.find(
-    (item) => item.id === Number(id)
-  );
+  if (!Number.isInteger(productId) || productId < 1) {
+    notFound();
+  }
+
+  const product = await getProductById(productId);
 
   if (!product) {
     notFound();
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-12">
-      <div className="mx-auto max-w-5xl">
-        <Link
-          href="/products"
-          className="text-sm text-gray-600 hover:underline"
-        >
-          ← Back to products
-        </Link>
+    <section className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-2">
+      <div>
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full rounded-2xl bg-white object-cover"
+        />
+      </div>
 
-        <div className="mt-8 grid gap-10 rounded-2xl bg-white p-6 shadow-sm md:grid-cols-2 md:p-10">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="h-80 w-full rounded-xl object-cover"
-          />
+      <div>
+        <p className="text-sm text-gray-500">
+          {product.category}
+        </p>
 
-          <div className="flex flex-col justify-center">
-            <p className="text-sm text-gray-500">
-              {product.category}
-            </p>
+        <h1 className="mt-2 text-3xl font-bold">
+          {product.name}
+        </h1>
 
-            <h1 className="mt-2 text-3xl font-bold">
-              {product.name}
-            </h1>
+        <p className="mt-4 text-2xl font-semibold">
+          {formatPrice(product.price)}
+        </p>
 
-            <p className="mt-4 text-2xl font-semibold">
-              {formatPrice(product.price)}
-            </p>
+        <p className="mt-6 text-gray-600">
+          {product.description}
+        </p>
 
-            <p className="mt-4 text-gray-600">
-              A quality everyday essential, selected for
-              comfort, style, and value.
-            </p>
+        <p className="mt-4 text-sm text-gray-500">
+          {product.stock > 0
+            ? `${product.stock} in stock`
+            : "Out of stock"}
+        </p>
 
-            <AddToCartButton product={product} />
-          </div>
+        <div className="mt-6">
+          <AddToCartButton product={product} />
         </div>
       </div>
-    </main>
+    </section>
   );
 }

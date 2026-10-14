@@ -1,10 +1,10 @@
 
-import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { Suspense } from "react";
 import Link from "next/link";
-import CartLink from "@/components/CartLink";
 
-// export const dynamic = "force-dynamic";
+import ProductCard from "@/components/ProductCard";
+import CartLink from "@/components/CartLink";
+import { getProducts } from "@/lib/db-products";
 
 export default function HomePage() {
   return (
@@ -23,6 +23,7 @@ export default function HomePage() {
             <Link href="/" className="hover:text-gray-500">
               Home
             </Link>
+
             <Link
               href="/products"
               className="hover:text-gray-500"
@@ -60,41 +61,56 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Product grid */}
-      <section className="mx-auto max-w-7xl px-6 pb-20">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <p className="text-sm text-gray-500">
-              Handpicked for you
+      {/* Featured products */}
+      <section className="mx-auto max-w-7xl px-6 py-12">
+        <h2 className="text-2xl font-bold">
+          Featured Products
+        </h2>
+
+        <p className="mt-2 text-gray-600">
+          Check out some of our favorite picks.
+        </p>
+
+        <Suspense
+          fallback={
+            <p className="mt-8 text-gray-600">
+              Loading featured products...
             </p>
-            <h2 className="mt-1 text-3xl font-bold">
-              Featured products
-            </h2>
-          </div>
-
-          <Link
-            href="/products"
-            className="text-sm font-medium underline underline-offset-4"
-          >
-            View all
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
-        </div>
+          }
+        >
+          <FeaturedProducts />
+        </Suspense>
       </section>
 
       {/* Footer */}
-      {/* <footer className="border-t bg-white px-6 py-8 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} ShopEase. Built while
-        learning Next.js.
-      </footer> */}
+
+<footer className="border-t bg-white px-6 py-8 text-center text-sm text-gray-500">
+  © 2026 ShopEase. Built while learning Next.js.
+</footer>
+
     </main>
+  );
+}
+
+async function FeaturedProducts() {
+  const products = await getProducts();
+
+  if (products.length === 0) {
+    return (
+      <p className="mt-8 text-gray-600">
+        No products available yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {products.slice(0, 4).map((product) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+        />
+      ))}
+    </div>
   );
 }
