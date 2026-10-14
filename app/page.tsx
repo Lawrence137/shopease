@@ -39,7 +39,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-6 py-16 md:py-24">
         <div className="rounded-2xl bg-gray-900 px-8 py-16 text-white md:px-16">
           <p className="text-sm font-medium uppercase tracking-widest text-gray-300">
-            Your everyday essentials
+            Your Everyday Essentials
           </p>
 
           <h1 className="mt-4 max-w-2xl text-4xl font-bold tracking-tight md:text-6xl">
@@ -55,7 +55,7 @@ export default function HomePage() {
             href="/products"
             className="mt-8 inline-block rounded-lg bg-white px-6 py-3 font-semibold text-black hover:bg-gray-200"
           >
-            Explore products
+            Explore Products
           </Link>
         </div>
       </section>
